@@ -189,10 +189,11 @@ def build_Scriptrangetodownload(scripts):
     mydb.close()
 
 def get_ScriptDataToFatch(scriptName):
-    open_connection()
+    mydb = open_connection()    
     mycursor = mydb.cursor()
     mycursor.execute("SELECT scriptname, year, month from script_range_to_download where workstatus='TODOWNLOAD' and scriptName='"+scriptName+"' order by scriptname DESC, year DESC, month DESC limit 1;")
     firstRow = mycursor.fetchone()
+    mydb.close()
     return firstRow
 
 def build_scriptTradeData(dataframe, scriptName):
@@ -207,6 +208,8 @@ def build_scriptTradeData(dataframe, scriptName):
     create_table_insert_data(dataframe,table_name)
 
 def create_table_insert_data(dataframe,table_name,):
+    mydb = open_connection()
+    cursor = mydb.cursor()
     query = f"SHOW TABLES LIKE '{table_name}'"
     cursor.execute(query)
     result = cursor.fetchone()
@@ -254,14 +257,14 @@ def process_to_download_and_persist(scriptName, semaphore):
     print("thread running for script:"+scriptName)
     dataToFetch = get_ScriptDataToFatch(scriptName)
     print(dataToFetch)
-    # startDate = "01-"+str(dataToFetch[2])+"-"+str(dataToFetch[1])
-    # if(dataToFetch[2]==12):
-    #     endDate = "01-1-"+str(dataToFetch[1]+1)
-    # else:
-    #     endDate = "01-"+str(dataToFetch[2]+1)+"-"+str(dataToFetch[1])
-    # print("downloading and uploading for "+dataToFetch[0] +" <"+startDate+", "+endDate+">")
-    # dataframeRate = stocks.get_data(stock_symbol=scriptName, full_data=False, start_date=startDate, end_date=endDate)
-    # build_scriptTradeData(dataframeRate, scriptName)
+    startDate = "01-"+str(dataToFetch[2])+"-"+str(dataToFetch[1])    
+    if(dataToFetch[2]==12):
+        endDate = "01-1-"+str(dataToFetch[1]+1)
+    else:
+        endDate = "01-"+str(dataToFetch[2]+1)+"-"+str(dataToFetch[1])
+    print("downloading and uploading for "+dataToFetch[0] +" <"+startDate+", "+endDate+">")
+    dataframeRate = stocks.get_data(stock_symbol=scriptName, full_data=False, start_date=startDate, end_date=endDate)
+    build_scriptTradeData(dataframeRate, scriptName)
 
 # def main():
 #     scriptNames = get_all_pending_script_names()
@@ -277,7 +280,8 @@ def process_to_download_and_persist(scriptName, semaphore):
 def main():
     mydb = open_connection()
     scriptNames = get_all_pending_script_names(mydb)
-    if scriptNames== None:
+    print(len(scriptNames))
+    if (scriptNames== None) | (len(scriptNames)==0) :
         build_Scriptrangetodownload(all_scripts)
     max_allow_thread = 4  # Number of threads
     semaphore = threading.Semaphore(max_allow_thread)
