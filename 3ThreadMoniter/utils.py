@@ -15,8 +15,6 @@ def insert_data(data, conn):
         # Commit the transaction
         conn.commit()
         # Close the cursor and connection
-        cur.close()
-        conn.close()
         print("Data inserted successfully!")
     except Exception as e:
         print("Error:", e)
