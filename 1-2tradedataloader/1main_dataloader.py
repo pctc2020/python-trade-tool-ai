@@ -9,21 +9,23 @@ import calendar
 import threading
 import queue
 
-
-# mysql connection 
-mydb = mysql.connector.connect(
-  host="localhost", #intelora.co.in
-  user="root",   #intelaku_shivam
-  password="Root", #intelaku_shivam
-  database="stockmarket" #intelaku_shivam
-)
+def open_connection():
+    # mysql connection 
+    mydb = mysql.connector.connect(
+    host="localhost", #intelora.co.in
+    user="root",   #intelaku_shivam
+    password="Root", #intelaku_shivam
+    database="stockmarket" #intelaku_shivam
+    )
+    return mydb
+ 
 # mydb = mysql.connector.connect(
 #   host="intelora.co.in",
 #   user="intelaku_shivam",
 #   password="intelaku_shivam",
 #   database="intelaku_shivam"
 # )
-cursor = mydb.cursor()
+
 
 # def renameDataframeExample(dataframe):
 #     dataframe.rename(columns = {
@@ -165,6 +167,7 @@ endYear = 2022
 startMonth = 1
 endMonth = 13
 def build_Scriptrangetodownload(scripts):
+    mydb = open_connection()
     mycursor = mydb.cursor()
     if(toReset):
         mycursor.execute("delete from script_range_to_download where workstatus!='COMPLETED' ")
@@ -183,8 +186,10 @@ def build_Scriptrangetodownload(scripts):
                 except  Exception as e:
                     print("Err in "+sqlQry, e )
     mydb.commit()
+    mydb.close()
 
 def get_ScriptDataToFatch(scriptName):
+    open_connection()
     mycursor = mydb.cursor()
     mycursor.execute("SELECT scriptname, year, month from script_range_to_download where workstatus='TODOWNLOAD' and scriptName='"+scriptName+"' order by scriptname DESC, year DESC, month DESC limit 1;")
     firstRow = mycursor.fetchone()
@@ -238,7 +243,7 @@ def create_table_insert_data(dataframe,table_name,):
     mydb.commit()  
     print(f"New table '{table_name}' created and data inserted.")
 
-def get_all_pending_script_names():
+def get_all_pending_script_names(mydb):
     mycursor = mydb.cursor()
     mycursor.execute("SELECT distinct scriptname FROM script_range_to_download  where workstatus='TODOWNLOAD' order by scriptname")
     allPendingScriptNames = mycursor.fetchall()
@@ -248,14 +253,15 @@ def get_all_pending_script_names():
 def process_to_download_and_persist(scriptName, semaphore):
     print("thread running for script:"+scriptName)
     dataToFetch = get_ScriptDataToFatch(scriptName)
-    startDate = "01-"+str(dataToFetch[2])+"-"+str(dataToFetch[1])
-    if(dataToFetch[2]==12):
-        endDate = "01-1-"+str(dataToFetch[1]+1)
-    else:
-        endDate = "01-"+str(dataToFetch[2]+1)+"-"+str(dataToFetch[1])
-    print("downloading and uploading for "+dataToFetch[0] +" <"+startDate+", "+endDate+">")
-    dataframeRate = stocks.get_data(stock_symbol=scriptName, full_data=False, start_date=startDate, end_date=endDate)
-    build_scriptTradeData(dataframeRate, scriptName)
+    print(dataToFetch)
+    # startDate = "01-"+str(dataToFetch[2])+"-"+str(dataToFetch[1])
+    # if(dataToFetch[2]==12):
+    #     endDate = "01-1-"+str(dataToFetch[1]+1)
+    # else:
+    #     endDate = "01-"+str(dataToFetch[2]+1)+"-"+str(dataToFetch[1])
+    # print("downloading and uploading for "+dataToFetch[0] +" <"+startDate+", "+endDate+">")
+    # dataframeRate = stocks.get_data(stock_symbol=scriptName, full_data=False, start_date=startDate, end_date=endDate)
+    # build_scriptTradeData(dataframeRate, scriptName)
 
 # def main():
 #     scriptNames = get_all_pending_script_names()
@@ -269,10 +275,11 @@ def process_to_download_and_persist(scriptName, semaphore):
 
 # -----------------------------------------thread new code------------------------------------------
 def main():
-    scriptNames = get_all_pending_script_names()
+    mydb = open_connection()
+    scriptNames = get_all_pending_script_names(mydb)
     if scriptNames== None:
         build_Scriptrangetodownload(all_scripts)
-    max_allow_thread = 2  # Number of threads
+    max_allow_thread = 4  # Number of threads
     semaphore = threading.Semaphore(max_allow_thread)
 
     threads=[]
