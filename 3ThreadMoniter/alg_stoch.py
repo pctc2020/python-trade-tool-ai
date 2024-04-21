@@ -1,6 +1,7 @@
 import pandas as pd
 import pandas_ta as ta
 import numpy as np
+import utils
 # import executor
 
 #param: it require 3 parameters fastk, slowk, slowd
@@ -40,5 +41,7 @@ def stoch_buy_sell(df,risk):
     df['buy_signal_price'],df['sell_signal_price'] = pd.Series([stoch_buy,stoch_sell]) 
     df["strategy_name"]="stoch_{}".format(risk)
     df['indicator'] = "stoch"
+    df['tradestatus'] = "Completed"
     print("TODO column rename") 
+    utils.update_data_table(df)
     return (df)

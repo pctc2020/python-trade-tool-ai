@@ -203,7 +203,7 @@ def build_scriptTradeData(dataframe, scriptName):
     dataframe.index.name = 'idno'
     # engine = create_engine("mysql+mysqlconnector://root:Root@localhost/stockmarket")
     # connection = engine.connect()
-    print(dataframe)
+    # print(dataframe)
     table_name = 'trade_record_'+(scriptName.lower().replace(" ","_"))
     create_table_insert_data(dataframe,table_name)
 
@@ -234,7 +234,9 @@ def create_table_insert_data(dataframe,table_name,):
             )
         """
         cursor.execute(create_table_query)
-        print("Table created!") 
+        print("Table created!")
+        cursor.commit()
+        mydb.commit() 
     # Insert data into the table
     for index, row in dataframe.iterrows():
         insert_query = f"INSERT INTO {table_name} (`script`, `stock`, `high`, `low`, `open`, `close`, `last_price`, `prev_close`, `quantity`, `traded_value`, `52W_high`, `52 Week Low Price`, `tradetime2`) VALUES ('{row['script']}','{row['stock']}','{row['high']}','{row['low']}','{row['open']}','{row['close']}','{row['last_price']}','{row['prev_close']}','{row['quantity']}','{row['traded_value']}','{row['52W_high']}','{row['52 Week Low Price']}',NULL)"
@@ -299,70 +301,3 @@ def main():
         
 
 main()
-# ---------------------New Code -----------------------------------------------------------------------
-
-# Assuming you have imported the necessary libraries and defined the required functions
-
-# def update_work_status(script_name, newStatus):
-#     mycursor = mydb.cursor()
-#     update_query = f"UPDATE script_range_to_download SET workstatus='"+newStatus+"' WHERE scriptname='{script_name}'"
-#     mycursor.execute(update_query)
-#     mydb.commit()
-#     print(f"Work status updated to 'COMPLETED' for script: {script_name}")
-
-
-# def worker(q):
-#     while True:
-#         item = q.get()
-#         if item is None:
-#             break
-#         scriptName, startDate, endDate = item
-#         print("Downloading and uploading for " + scriptName + " <" + startDate + ", " + endDate + ">")
-        # dataframeRate = stocks.get_data(stock_symbol=scriptName, full_data=False, start_date=startDate, end_date=endDate)
-#         build_scriptTradeData(dataframeRate, scriptName)
-#         update_work_status(scriptName, "COMPLETED")  # Updating work status here
-#         q.task_done()
-
-
-# def main():
-#     build_Scriptrangetodownload()
-#     thread_count = 5  # Number of threads
-#     q = queue.Queue()
-#     threads = []
-    
-#     for _ in range(thread_count):
-#         t = threading.Thread(target=worker, args=(q,))
-#         t.start()
-#         threads.append(t)
-
-#     isRecordAvailable = True
-#     while isRecordAvailable:
-#         dataToFetch = get_ScriptDataToFatch()
-            
-#         if dataToFetch is None:
-#             isRecordAvailable = False
-#             break
-#         scriptName = dataToFetch[0]
-#         startDate = "01-" + str(dataToFetch[2]) + "-" + str(dataToFetch[1])
-#         if dataToFetch[2] == 12:
-#             endDate = "01-1-" + str(dataToFetch[1] + 1)
-#         else:
-#             endDate = "01-" + str(dataToFetch[2] + 1) + "-" + str(dataToFetch[1])
-#         q.put((scriptName, startDate, endDate))
-#         # update_selected_rows_status(dataTofetch, "started")  #function banana h jo data ki progree change karde(work_status) 
-    
-
-#     q.join()
-#     for _ in range(thread_count):
-#         q.put(None)
-
-#     for t in threads:
-#         t.join()
-
-
-#     # mydb.close()
-#     # cursor.close()
-#     print("All tasks completed.")
-
-# if __name__ == "__main__":
-#     main()

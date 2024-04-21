@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
+import utils
 # import executor
 
 #param: it require 4 parameters 
@@ -44,5 +45,7 @@ def coppock_buy_sell(df,params):
     df['buy_signal_price'],df['sell_signal_price'] = pd.Series([coppock_buy,coppock_sell]) 
     df["strategy_name"]="coppock_{}".format(param1_short)
     df['indicator'] = "coppock"
+    df['tradestatus'] = "Completed"
     print("TODO column rename") 
+    utils.update_data_table(df)
     return (df)

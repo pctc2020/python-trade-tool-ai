@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
+import utils
 # import executor
 
 #param: it require 2 parameters length, multiplier
@@ -48,7 +49,9 @@ def st_buy_sell(df,params):
     df['buy_signal_price'],df['sell_signal_price'] = pd.Series([st_buy,st_sell]) 
     df["strategy_name"]="st_{}_{}".format(param1_k, param2_d)
     df['indicator'] = "st"
+    df['tradestatus'] = "Completed"
     print("TODO column rename") 
+    utils.update_data_table(df)
     return (df)
 
 

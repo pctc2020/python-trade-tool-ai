@@ -1,7 +1,7 @@
 import pandas as pd 
 import pandas_ta as ta
 import numpy as np
-# import executor
+import utils
 
 #param: it require 2 parameters length and c
 def cci_buy_sell(df,param):
@@ -44,12 +44,15 @@ def cci_buy_sell(df,param):
             
             
     print("CCI Analysis completed")
+    df = df.drop(labels=[colName], axis=1)
     df['buy_signal_price'] = cci_buy
     df['sell_signal_price'] = cci_sell
     df["strategy_name"] = "cci_{}_{}".format(rapam_length, rapam_c)
     df['indicator'] = "cci"
+    df['tradestatus'] = "Completed"
     #df['buy_signal_price'], df['sell_signal_price'] = pd.Series([cci_buy, cci_sell])
-    print("TODO column rename") 
+    print("TODO column rename")
+    utils.update_data_table(df)
     return (df)
 
 

@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
+import utils 
 # import executor
 
 #param: it require 2 parameters period and signal
@@ -36,7 +37,9 @@ def rvi_buy_sell(data, risk):
     data['buy_signal_price'], data['sell_signal_price'] = pd.Series([rvi_buy, rvi_sell])
     data["strategy_name"]="RVI_{}".format(risk1_period)
     data['indicator'] = "RVI"
+    data['tradestatus'] = "Completed"
     print("TODO column rename") 
+    utils.update_data_table(data)
     return data
 
 

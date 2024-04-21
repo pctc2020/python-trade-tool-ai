@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
+import utils
 # import executor
 
 # Function to calculate TSI and generate buy/sell signals
@@ -50,5 +51,7 @@ def tsi_buy_sell(df, param):
     df['buy_signal_price'], df['sell_signal_price'] = pd.Series([tsi_buy, tsi_sell])
     df["strategy_name"] = "tsi_{}_{}_{}".format(param_slow, param_fast, param_signal)
     df['indicator'] = "tsi"
+    df['tradestatus'] = "Completed"
     print("TODO column rename") 
+    utils.update_data_table(df)
     return (df)

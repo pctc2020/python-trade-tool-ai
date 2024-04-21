@@ -1,6 +1,7 @@
 import pandas_ta as ta
 import pandas as pd
 import numpy as np
+import utils 
 # import executor
 
 #param: it require 1 parameters length 
@@ -38,7 +39,9 @@ def rsi_buy_sell(df,param):
     df['buy_signal_price'], df['sell_signal_price'] = pd.Series([rsi_buy, rsi_sell])
     df["strategy_name"]="rsi_{}".format(param_length)
     df['indicator'] = "rsi"
+    df['tradestatus'] = "Completed"
     print("TODO column rename") 
+    utils.update_data_table(df)
     return (df)
 
         

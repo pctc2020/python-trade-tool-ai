@@ -1,6 +1,7 @@
 import pandas_ta as ta
 import numpy as np
 import pandas as pd
+import utils
 # import executor
 
 
@@ -43,5 +44,7 @@ def bbands_buy_sell(data, params):
     data['buy_signal_price'], data['sell_signal_price'] = pd.Series([bbandsBuy, bbandsSell])
     data["strategy_name"]="bbands_{}".format(param1_length)
     data['indicator'] = "bbands"
+    data['tradestatus'] = "Completed"
     print("TODO column rename") 
+    utils.update_data_table(data)
     return (data)

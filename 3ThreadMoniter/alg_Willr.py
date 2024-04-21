@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
+import utils
 
 # Define the willr_buy_sell function
 # Requires only 1 parameter: period 
@@ -45,5 +46,7 @@ def willr_buy_sell(df, param):
     
     df = df.drop(columns=colName)  # Corrected the column name to drop
     df.rename(columns={"Date": "Trade_Date", "time": "Trade_time"}, inplace=True)    
-    print("TODO column rename") 
+    df['tradestatus'] = "Completed"
+    print("TODO column rename")
+    utils.update_data_table(df) 
     return (df)

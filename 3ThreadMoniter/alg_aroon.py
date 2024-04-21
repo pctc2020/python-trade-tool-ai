@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
+import utils
 # import executor
 
 #param: it require 2 parameters fast and slow
@@ -35,5 +36,7 @@ def aroon_buy_sell(df, param):
     df['buy_signal_price'],df['sell_signal_price'] = pd.Series([aroon_buy,aroon_sell]) 
     df["strategy_name"]="aroon_{}".format(param_fast)+"_{}".format(param_slow)
     df['indicator'] = "aroon"
+    df['tradestatus'] = "Completed"
     print("TODO= column rename")
+    utils.update_data_table(df)
     return df

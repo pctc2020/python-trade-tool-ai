@@ -1,6 +1,7 @@
 import pandas as pd
 import pandas_ta as ta
 import numpy as np
+import utils
 # import executor
 
 #param: it require 3 parameters params : short, long, singal
@@ -54,5 +55,7 @@ def macd_buy_sell(df, params):
     df['buy_signal_price'], df['sell_signal_price'] = pd.Series([MACD_Buy, MACD_Sell])
     df["strategy_name"]="macd_{}_{}_{}".format(param1_short, param2_long, param3_signal)
     df['indicator'] = "macd"
+    df['tradestatus'] = "Completed"
     print("TODO column rename") 
+    utils.update_data_table(df)
     return (df)

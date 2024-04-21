@@ -55,6 +55,7 @@ def adx_buy_sell(df, risk):
     # Set strategy name and indicator columns
     df["strategy_name"] = "adx_{}".format(risk)
     df['indicator'] = "adx"
+    df['tradestatus'] = "Completed"
     print("TODO column rename")
     utils.update_data_table(df)
     return df

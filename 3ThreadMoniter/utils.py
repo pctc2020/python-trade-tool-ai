@@ -1,15 +1,20 @@
 import pandas as pd
 import mysql.connector
 import pymysql
-# ---------------------------------------------------------------------------------
 import psycopg2
 
 def insert_data(data, conn):
+    # print("Script:",data['script'].dtype)
+    # print("buy_signal_price:",data['buy_signal_price'].dtype)
+    # print("sell_signal_price:",data['sell_signal_price'].dtype)
+    # print("strategy_name:",data['strategy_name'].dtype)
+    # print("indicator:",data['indicator'].dtype)
+    # print("tradestatus:",data['tradestatus'].dtype)
     try:
         # Create a cursor object
         cur = conn.cursor()
         # SQL query to insert data into the table
-        sql_query = "INSERT INTO buy_sell_data (script, buy_signal_price, buy_signal_price, strategy_name, indicator, tradestatus) VALUES (%s, %s, %s, %s, %s, %s)"  # Modify column names as per your table schema
+        sql_query = "INSERT INTO buy_sell_data (script, buy_signal_price, sell_signal_price, strategy_name, indicator, tradestatus) VALUES (%s, %s, %s, %s, %s, %s)"
         # Execute the query with data parameter
         cur.execute(sql_query, data)
         # Commit the transaction
@@ -39,6 +44,14 @@ def update_to_buy_sell(data):
         conn = db_connect()
         print(data.columns)
         # print(data)
+        # change datatype in data column
+        data['script'] = data['script'].astype(str)
+        data['buy_signal_price'] = data['buy_signal_price'].astype(float)  # Ya 'float64' ko 'float' mein convert karein
+        data['sell_signal_price'] = data['sell_signal_price'].astype(float)  # Ya 'float64' ko 'float' mein convert karein
+        data['strategy_name'] = data['strategy_name'].astype(str)
+        data['indicator'] = data['indicator'].astype(str)
+        data['tradestatus'] = data['tradestatus'].astype(str)
+        #insert data in database table
         insert_data(data, conn)
         # data.to_sql("buy_sell_data", conn, if_exists="replace", index=False)
         conn.close()

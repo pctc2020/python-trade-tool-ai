@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
+import utils 
 # import executor
 
 #it need 2 parameter period and multiple
@@ -40,6 +41,8 @@ def kc_buy_sell(df, risk):
     df['buy_signal_price'], df['sell_signal_price'] = pd.Series([kc_buy, kc_sell])
     df["strategy_name"]="kc_"+colnamepart
     df['indicator'] = "kc"
+    df['tradestatus'] = "Completed"
     print("TODO column rename") 
+    utils.update_data_table(df)
     return (df)
     

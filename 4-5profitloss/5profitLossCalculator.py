@@ -90,10 +90,12 @@ def Actual_buy_sell_price():
             buy_price = row[0] * 1.0105  # Adding 1.05% to buy_signal_price
             sell_price = row[1] * 0.9895  # Subtracting 1.05% from sell_signal_price
             Quantity = 10
-
+            brockrage_buy_price = buy_price - row[0] 
+            brockrage_sell_price = row[1] - sell_price
             # Inserting calculated values into the table
-            cursor.execute("INSERT INTO buy_sell_data (actual_buy_price, actual_sell_price, Quantity) VALUES (%s, %s, %s)", (buy_price, sell_price, Quantity))
-        
+            cursor.execute("INSERT INTO buy_sell_data (actual_buy_price, actual_sell_price, Quantity, brockrage_buy_price, brockrage_sell_price) VALUES (%s, %s, %s, %s, %s)", (buy_price, sell_price, Quantity, brockrage_buy_price, brockrage_sell_price))
+# formula name , indicator name, trade_date_time
+# brokerage_buy_price,         
         # Commit the transaction
         conn.commit()
 
@@ -109,17 +111,22 @@ def Actual_buy_sell_price():
 def investment_wise(mydb):
   try:
       cursor = mydb.cursor()
-      cursor.execute("SELECT actual_buy_price, actual_sell_price FROM buy_sell_data")
+      create_investment_table(mydb)
+      cursor.execute("SELECT script, actual_buy_price, actual_sell_price, indicator, brockrage_buy_price, brockrage_sell_price FROM buy_sell_data")
       rows = cursor.fetchall()
       Quantities = []
       for row in rows:
-        actual_buy_price = row[0]
-        actual_sell_price = row[1]
+        script = row[0]
+        actual_buy_price = row[1]
+        actual_sell_price = row[2]
         Quantity = 10000/actual_buy_price
-        Quantities.append((Quantity, actual_buy_price, actual_sell_price))
+        indicator = row[3]
+        brockrage_buy_price = row[4]
+        brockrage_sell_price = row[5]
+        Quantities.append((script, actual_buy_price, actual_sell_price, Quantity, indicator, brockrage_buy_price, brockrage_sell_price))
       
-      insert_query = "INSERT INTO investment_table (quantity, buy_price, sell_price) VALUES (%s, %s, %s)"
-      cursor.executemany(insert_query, Quantities)
+        insert_query = "INSERT INTO investment_table (script, buy_price, sell_price, quantity, indicator, brockrage_buy_price, broack_sell_price) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+        cursor.executemany(insert_query, Quantities)
 
       conn.commit()
       cur.close()
@@ -127,6 +134,32 @@ def investment_wise(mydb):
       print("Error:", e)
 
 
+def create_investment_table(mydb):
+    try:
+        cursor = mydb.cursor()
+        cursor.execute("SHOW TABLES LIKE 'investment_table'")
+        result = cursor.fetchone()
+        if result:
+            print("Table Already Exist")
+        else:
+            create_query = """CREATE TABLE investment_table (
+                                id INT AUTO_INCREMENT PRIMARY KEY,
+                                script VARCHAR(255),
+                                actual_buy_price DECIMAL(10, 2),
+                                actual_sell_price DECIMAL(10, 2),
+                                Quantity DECIMAL(10, 2),
+                                indicator VARCHAR(255),
+                                brockrage_buy_price DECIMAL(10, 2),
+                                brockrage_sell_price DECIMAL(10, 2)
+                            )"""
+            cursor.execute(create_query)
+            print("Table Created Successfully")
+
+    except Exception as e:
+        print("Error:", e)
+
+# Example usage:
+create_investment_table(mydb)
 
 
 

@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
+import utils
 # import executor
 
 #param: it require 3 parameters roc1*1000000+roc2*10000*roc3*100 and sma1*1000000+sma2*10000+sma3*100, signal\
@@ -49,7 +50,9 @@ def kst_buy_sell(df,param):
     df['buy_signal_price'],df['sell_signal_price'] = pd.Series([kst_buy,kst_sell]) 
     df["strategy_name"]="KST_"+str(param_sma1)+"_"+str(param_sma2)+"_"+str(param_sma3)+"_"+str(param_sma4)+"_"+str(param_roc1)+"_"+str(param_roc2)+"_"+str(param_roc3)+"_"+str(param_roc4)+"_"+str(param_signal)
     df['indicator'] = "kst"
+    df['tradestatus'] = "Completed"
     print("TODO column rename") 
+    utils.update_data_table(df)
     return (df)
 
 

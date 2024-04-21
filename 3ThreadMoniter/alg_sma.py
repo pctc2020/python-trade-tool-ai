@@ -1,6 +1,7 @@
 import pandas_ta as ta
 import numpy as np
 import pandas as pd
+import utils
 # import executor
 
 # Function for buy and sell signal using SMA
@@ -42,5 +43,7 @@ def sma_buy_sell(data, values):
     data['buy_signal_price'], data['sell_signal_price'] = pd.Series([signalBuy, signalSell])
     data["strategy_name"] = "sma_{}_{}".format(signal1, signal2)
     data['indicator'] = "sma"
+    data['tradestatus'] = "Completed"
     print("TODO column rename") 
+    utils.update_data_table(data)
     return (data)
