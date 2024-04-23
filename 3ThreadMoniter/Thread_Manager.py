@@ -7,7 +7,7 @@ import alg_stoch, alg_tsi, alg_Willr
 
 def thread_manager(df, taskparameters, import_file_names, mydb):
     print("start....", taskparameters, import_file_names)
-    max_allow_thread = 3
+    max_allow_thread = 1
     semaphore = threading.Semaphore(max_allow_thread)
     # # taskparameters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K']
     # # import_file_names = ["Thread_A.callme", "Thread_B.callme", "Thread_C.callme", "Thread_D.callme", "Thread_E.callme", "Thread_F.callme"]

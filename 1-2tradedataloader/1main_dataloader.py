@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 import calendar
 import threading
 import queue
+import datetime
 
 def open_connection():
     # mysql connection 
@@ -151,26 +152,26 @@ def getStartdate(month, year):
     # Month ki first date calculate karna
     first_day = 1
     # Date ko dd/mm/yyyy format mein convert karna
-    start_date = f"{first_day:02d}/{month:02d}/{year}"
+    start_date = f"{first_day:02d}-{month:02d}-{year}"
     return start_date
 
 def getEnddate(month, year):
     # Month ki last date calculate karna
     last_day = calendar.monthrange(year, month)[1]
     # Date ko dd/mm/yyyy format mein convert karna
-    end_date = f"{last_day:02d}/{month:02d}/{year}"
+    end_date = f"{last_day:02d}-{month:02d}-{year}"
     return end_date
 
 reset = False
 startYear = 2020
-endYear = 2022
+endYear = 2023
 startMonth = 1
 endMonth = 13
 def build_Scriptrangetodownload(scripts):
     mydb = open_connection()
     mycursor = mydb.cursor()
     if(toReset):
-        mycursor.execute("delete from script_range_to_download where workstatus!='COMPLETED' ")
+        mycursor.execute("delete from script_range_to_download where workstatus != 'COMPLETED' ")
         mydb.commit()
     for script in scripts:
         print("processing for "+script)
@@ -191,7 +192,7 @@ def build_Scriptrangetodownload(scripts):
 def get_ScriptDataToFatch(scriptName):
     mydb = open_connection()    
     mycursor = mydb.cursor()
-    mycursor.execute("SELECT scriptname, year, month from script_range_to_download where workstatus='TODOWNLOAD' and scriptName='"+scriptName+"' order by scriptname DESC, year DESC, month DESC limit 1;")
+    mycursor.execute("SELECT scriptname, start_date, end_date from script_range_to_download where workstatus='TODOWNLOAD' and scriptName='"+scriptName+"' order by scriptname DESC, year DESC, month DESC limit 1;")
     firstRow = mycursor.fetchone()
     mydb.close()
     return firstRow
@@ -201,11 +202,10 @@ def build_scriptTradeData(dataframe, scriptName):
     dataframe.index.name = 'idno'
     dataframe.index = np.arange(1, len(dataframe) + 1)
     dataframe.index.name = 'idno'
-    # engine = create_engine("mysql+mysqlconnector://root:Root@localhost/stockmarket")
-    # connection = engine.connect()
-    # print(dataframe)
     table_name = 'trade_record_'+(scriptName.lower().replace(" ","_"))
+    # print(dataframe)
     create_table_insert_data(dataframe,table_name)
+
 
 def create_table_insert_data(dataframe,table_name,):
     mydb = open_connection()
@@ -230,7 +230,7 @@ def create_table_insert_data(dataframe,table_name,):
                 `traded_value` FLOAT,
                 `52W_high` FLOAT,
                 `52 Week Low Price` FLOAT,
-                `tradetime2` DATETIME
+                `tradetime2` TIMESTAMP
             )
         """
         cursor.execute(create_table_query)
@@ -239,7 +239,9 @@ def create_table_insert_data(dataframe,table_name,):
         mydb.commit() 
     # Insert data into the table
     for index, row in dataframe.iterrows():
-        insert_query = f"INSERT INTO {table_name} (`script`, `stock`, `high`, `low`, `open`, `close`, `last_price`, `prev_close`, `quantity`, `traded_value`, `52W_high`, `52 Week Low Price`, `tradetime2`) VALUES ('{row['script']}','{row['stock']}','{row['high']}','{row['low']}','{row['open']}','{row['close']}','{row['last_price']}','{row['prev_close']}','{row['quantity']}','{row['traded_value']}','{row['52W_high']}','{row['52 Week Low Price']}',NULL)"
+        # Convert 'tradetime2' column to the appropriate datetime format
+        tradetime2 = datetime.datetime.strptime(row['tradetime2'], '%d-%b-%Y').strftime('%Y-%m-%d %H:%M:%S')
+        insert_query = f"INSERT INTO {table_name} (`script`, `stock`, `high`, `low`, `open`, `close`, `last_price`, `prev_close`, `quantity`, `traded_value`, `52W_high`, `52 Week Low Price`, `tradetime2`) VALUES ('{row['script']}','{row['stock']}','{row['high']}','{row['low']}','{row['open']}','{row['close']}','{row['last_price']}','{row['prev_close']}','{row['quantity']}','{row['traded_value']}','{row['52W_high']}','{row['52 Week Low Price']}','{tradetime2}')"
         print(insert_query)
         print("Table Already exists!")
         cursor.execute(insert_query)
@@ -247,6 +249,9 @@ def create_table_insert_data(dataframe,table_name,):
     # Commit changes to the database
     mydb.commit()  
     print(f"New table '{table_name}' created and data inserted.")
+
+
+
 
 def get_all_pending_script_names(mydb):
     mycursor = mydb.cursor()
@@ -256,29 +261,27 @@ def get_all_pending_script_names(mydb):
      
 
 def process_to_download_and_persist(scriptName, semaphore):
+    semaphore.acquire()
     print("thread running for script:"+scriptName)
-    dataToFetch = get_ScriptDataToFatch(scriptName)
-    print(dataToFetch)
-    startDate = "01-"+str(dataToFetch[2])+"-"+str(dataToFetch[1])    
-    if(dataToFetch[2]==12):
-        endDate = "01-1-"+str(dataToFetch[1]+1)
-    else:
-        endDate = "01-"+str(dataToFetch[2]+1)+"-"+str(dataToFetch[1])
-    print("downloading and uploading for "+dataToFetch[0] +" <"+startDate+", "+endDate+">")
-    dataframeRate = stocks.get_data(stock_symbol=scriptName, full_data=False, start_date=startDate, end_date=endDate)
-    build_scriptTradeData(dataframeRate, scriptName)
-
-# def main():
-#     scriptNames = get_all_pending_script_names()
-#     if scriptNames== None:
-#         build_Scriptrangetodownload(all_scripts)
-#     thread_count = 5  # Number of threads
-
-#     for scriptname in scriptNames:
-#         process_to_download_and_persist(scriptname[0])
+    try:
+        dataToFetch = get_ScriptDataToFatch(scriptName)
+        print(dataToFetch)
+        startDate = str(dataToFetch[1])
+        endDate = str(dataToFetch[2])
+        # startDate = "01-"+str(dataToFetch[2])+"-"+str(dataToFetch[1])    
+        # if(dataToFetch[2]==12):
+            # endDate = "01-1-"+str(dataToFetch[1]+1)
+        # else:
+            # endDate = "01-"+str(dataToFetch[2]+1)+"-"+str(dataToFetch[1])
+        print("downloading and uploading for "+dataToFetch[0] +" <"+startDate+", "+endDate+">")
+        dataframeRate = stocks.get_data(stock_symbol=scriptName, full_data=False, start_date=startDate, end_date=endDate)
+        # print(dataframeRate.columns)
+        # print("tradetime2",dataframeRate['tradetime2'].dtype)
+        build_scriptTradeData(dataframeRate, scriptName)
+    finally:
+        semaphore.release()
 
 
-# -----------------------------------------thread new code------------------------------------------
 def main():
     mydb = open_connection()
     scriptNames = get_all_pending_script_names(mydb)

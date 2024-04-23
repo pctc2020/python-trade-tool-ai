@@ -8,8 +8,8 @@ from numpy.random import randint
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  password="admin",
-  database="shop_portal"
+  password="Root",
+  database="stockmarket"
 )
 
 def getTradeSuccessData(ticeker, indicator, tradeStatus):
@@ -57,51 +57,44 @@ def updateTradeDableAfterCalculation(tradeDF, newStatus):
     except:
       print("Err in "+sqlQry)
 
-def main():
-  # tradeDF = getTradeSuccessData("HDFC", "SME" , "TRADE_SUCCESS")
-  # print("got all TRADE_SUCCESS record into tradeDF : {} ".format(len(tradeDF)))
+# def main():
+  # tradeDF = getTradeSuccessData("HDFC", "SME" , "TRADE_SUCCESS")  #not started
+  # print("got all TRADE_SUCCESS record into tradeDF : {} ".format(len(tradeDF))) #not started
   # profitLossDF = calculateProfitLossIndicatorWise(tradeDF)
-  print("calculated profitLossDF : {} ".format(len(profitLossDF)))
-  updateProfitLossTable(profitLossDF)
-  print("update profit loss in database : {} ".format(len(profitLossDF)))
-  updateTradeDableAfterCalculation(tradeDF, "PL_CALCULATED")
-  print("update PL_CALCULATED status in trade table : {} ".format(len(tradeDF)))
-  Actual_buy_sell_price()
+  # print("calculated profitLossDF : {} ".format(len(profitLossDF)))
+  # updateProfitLossTable(profitLossDF)
+  # print("update profit loss in database : {} ".format(len(profitLossDF)))
+  # updateTradeDableAfterCalculation(tradeDF, "PL_CALCULATED")
+  # print("update PL_CALCULATED status in trade table : {} ".format(len(tradeDF)))
 
-main()
+
+
+# main()
 
 # -----------------------------------------------------------------------------------------
 import mysql.connector
 
-def Actual_buy_sell_price():
+def Actual_buy_sell_price(mydb):
     try:
-        
-        # Create a cursor object
         cursor = mydb.cursor()
-
-        # Fetching data from buy_sell_data table
+        cursor.execute("ALTER TABLE buy_sell_data ADD COLUMN buy_price DECIMAL(10, 2)")
+        cursor.execute("ALTER TABLE buy_sell_data ADD COLUMN sell_price DECIMAL(10, 2)")
+        cursor.execute("ALTER TABLE buy_sell_data ADD COLUMN Quantity DECIMAL(10, 2)")
+        cursor.execute("ALTER TABLE buy_sell_data ADD COLUMN brockrage_buy_price DECIMAL(10, 2)")
+        cursor.execute("ALTER TABLE buy_sell_data ADD COLUMN brockrage_sell_price DECIMAL(10, 2)")
         cursor.execute("SELECT buy_signal_price, sell_signal_price FROM buy_sell_data")
-
-        # Fetch all rows
         rows = cursor.fetchall()
-
-        # Iterate through rows and calculate actual buy and sell prices
         for row in rows:
             buy_price = row[0] * 1.0105  # Adding 1.05% to buy_signal_price
             sell_price = row[1] * 0.9895  # Subtracting 1.05% from sell_signal_price
             Quantity = 10
             brockrage_buy_price = buy_price - row[0] 
             brockrage_sell_price = row[1] - sell_price
-            # Inserting calculated values into the table
-            cursor.execute("INSERT INTO buy_sell_data (actual_buy_price, actual_sell_price, Quantity, brockrage_buy_price, brockrage_sell_price) VALUES (%s, %s, %s, %s, %s)", (buy_price, sell_price, Quantity, brockrage_buy_price, brockrage_sell_price))
+            cursor.execute("INSERT INTO buy_sell_data (buy_price, sell_price, Quantity, brockrage_buy_price, brockrage_sell_price) VALUES (%s, %s, %s, %s, %s)", (buy_price, sell_price, Quantity, brockrage_buy_price, brockrage_sell_price))
 # formula name , indicator name, trade_date_time
 # brokerage_buy_price,         
-        # Commit the transaction
-        conn.commit()
-
-        # Close the cursor and connection
+        mydb.commit()
         cursor.close()
-        conn.close()
 
         print("Actual buy and sell prices updated successfully!")
 
@@ -112,7 +105,7 @@ def investment_wise(mydb):
   try:
       cursor = mydb.cursor()
       create_investment_table(mydb)
-      cursor.execute("SELECT script, actual_buy_price, actual_sell_price, indicator, brockrage_buy_price, brockrage_sell_price FROM buy_sell_data")
+      cursor.execute("SELECT script, buy_price, sell_price, indicator, brockrage_buy_price, brockrage_sell_price FROM buy_sell_data")
       rows = cursor.fetchall()
       Quantities = []
       for row in rows:
@@ -125,11 +118,11 @@ def investment_wise(mydb):
         brockrage_sell_price = row[5]
         Quantities.append((script, actual_buy_price, actual_sell_price, Quantity, indicator, brockrage_buy_price, brockrage_sell_price))
       
-        insert_query = "INSERT INTO investment_table (script, buy_price, sell_price, quantity, indicator, brockrage_buy_price, broack_sell_price) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+        insert_query = "INSERT INTO investment_table (script, actual_buy_price, actual_sell_price, quantity, indicator, brockrage_buy_price, broack_sell_price) VALUES (%s, %s, %s, %s, %s, %s, %s)"
         cursor.executemany(insert_query, Quantities)
 
-      conn.commit()
-      cur.close()
+      mydb.commit()
+      cursor.close()
   except Exception as e:
       print("Error:", e)
 
@@ -155,13 +148,22 @@ def create_investment_table(mydb):
             cursor.execute(create_query)
             print("Table Created Successfully")
 
+        mydb.commit()
+        cursor.close()    
+
     except Exception as e:
         print("Error:", e)
 
 # Example usage:
-create_investment_table(mydb)
+# create_investment_table(mydb)
+def main():
+  try:
+    Actual_buy_sell_price(mydb)
+    investment_wise(mydb)
+  except Exception as e:
+    print("error:", e)
 
-
+main()
 
 
 
