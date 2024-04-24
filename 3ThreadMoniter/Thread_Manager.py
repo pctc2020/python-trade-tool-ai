@@ -33,6 +33,8 @@ def thread_manager(df, taskparameters, import_file_names, mydb):
 
 
 def my_caller(df, class_name, params, mydb, semaphore):
+    semaphore.acquire()
+    # print("thread running for Table:"+df)
     try:
         if class_name == "alg_adx":
             alg_adx.adx_buy_sell(df, params)

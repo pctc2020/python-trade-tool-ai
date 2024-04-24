@@ -24,11 +24,9 @@ def db_connection():
 #-----------------------------------------------------------------------------
 def multiple_table(mydb):
     db_cursor = mydb.cursor()
-    # all_dfs = []
     query = "SHOW TABLES LIKE 'trade%'"
     db_cursor.execute(query)    
     table_names = [name[0] for name in db_cursor.fetchall()]
-    # all_dfs.append(trade_records)
     print(table_names)
     return table_names
 
@@ -48,7 +46,6 @@ def df_data(mydb, table_names):
     df = pd.concat(all_dfs, ignore_index=True)
     print(df)
     return df
-#--------------------------------------------------------------------------
 
 def param_data(mydb):
     db_cursor=mydb.cursor()
@@ -83,9 +80,9 @@ def main():
     print("database Connected!")
     table_names = multiple_table(mydb)
     df = df_data(mydb, table_names)
-    # db_select = param_data(mydb)
-    # params, filenames = param_data_siquence(db_select)
-    # thread_manager(df, params, filenames, mydb)
+    db_select = param_data(mydb)
+    params, filenames = param_data_siquence(db_select)
+    thread_manager(df, params, filenames, mydb)
 
 main()
 

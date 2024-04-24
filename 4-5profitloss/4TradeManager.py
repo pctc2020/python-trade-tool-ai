@@ -23,6 +23,21 @@ def getALLToTradeDataFromBuySaleTable(mydb, tradestatus):
     # print(df)
     return df
 
+def prepareTradeDF(df):
+  for index, row in df.iterrows():
+    new_row = { 'id': time.time()*1000.0,
+        'indicator': buySaleRow['indicator'],
+        'strategy_name': buySaleRow['strategy_name'],
+        'final_trade_date_time': buySaleRow['final_trade_date_time'],
+        'ticker': buySaleRow['ticker'],
+        'qty': 10,
+        'sell_signal_price': buySaleRow['sell_signal_price'],
+        'buy_signal_price': buySaleRow['buy_signal_price'],
+        'tradestatus': 'ORDER_PLACED'
+      }
+    tradeDf.loc[index] = new_row
+  return tradeDf
+
 
 #create table code...
 def create_trade_data_table(mydb):
