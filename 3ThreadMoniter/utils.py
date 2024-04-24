@@ -3,34 +3,23 @@ import mysql.connector
 import pymysql
 import psycopg2
 
-def insert_data(data, conn):
-    print(data['script'])
-    print("Script:",data['script'].dtype)
-    # print("buy_signal_price:",data['buy_signal_price'].dtype)
-    # print("sell_signal_price:",data['sell_signal_price'].dtype)
-    # print("strategy_name:",data['strategy_name'].dtype)
-    # print("indicator:",data['indicator'].dtype)
-    # print("tradestatus:",data['tradestatus'].dtype)
-    print(data)
-    for row in data:
-        print("1234560000000:"+row)
-    val = (data['script'], "Blue Village")
+def insert_data(data, conn):    
     try:
-        # Create a cursor object
         cur = conn.cursor()
-        # SQL query to insert data into the table
-        # buy_signal_price, sell_signal_price, strategy_name, indicator, tradestatus        
-        sql_query = "INSERT INTO buy_sell_data (script, indicator ) VALUES (%s, %s)"
-        # Execute the query with data parameter
-        cur.execute(sql_query, val)
-        # Commit the transaction
-        conn.commit()
-        # Close the cursor and connection
-        print("Data inserted successfully!")
+        create_buy_sell_data_table(conn)
+        for index, row in data.iterrows():
+            # SQL query to insert data into the table
+            sql_query = "INSERT INTO buy_sell_data (id, ticker, buy_signal_price, sell_signal_price, strategy_name, indicator, final_trade_date_time, tradestatus) VALUES (NULL, '%s', '%s', '%s', '%s', '%s', '%s', '%s')"  % (row['script'], row['buy_signal_price'], row['sell_signal_price'], row['strategy_name'], row['indicator'], row["tradetime2"], row['tradestatus'] )
+            print(sql_query)
+            cur.execute(sql_query)
+            # Execute the query with data parameter
+            # Commit the transaction
+            conn.commit()
+            # Close the cursor and connection
+            print("Data inserted successfully!")
     except Exception as e:
         print("Error:", e)
 
-# ---------------------------------------------------------------------------------
 #connecting to database 
 def db_connect():
     try:
@@ -49,14 +38,7 @@ def update_to_buy_sell(data):
         print("Updating results to database")
         conn = db_connect()
         # print(data.columns)
-        # print(data)
-        # change datatype in data column
-        # data['script'] = data['script'].astype(str)
-        # data['buy_signal_price'] = data['buy_signal_price'].astype(float)  # Ya 'float64' ko 'float' mein convert karein
-        # data['sell_signal_price'] = data['sell_signal_price'].astype(float)  # Ya 'float64' ko 'float' mein convert karein
-        # data['strategy_name'] = data['strategy_name'].astype(str)
-        # data['indicator'] = data['indicator'].astype(str)
-        # data['tradestatus'] = data['tradestatus'].astype(str)
+        print(data)
         #insert data in database table
         insert_data(data, conn)
         # data.to_sql("buy_sell_data", conn, if_exists="replace", index=False)
@@ -71,11 +53,38 @@ def update_data_table(df):
     if(df.empty):
         print("Data Cleaning Completed & Data is Empty...")
     else:
-        data = df.drop(labels=["id","stock","open","close","high","low","last_price",
+        data = df.drop(labels=["stock","open","close","high","low","last_price",
        "prev_close", "quantity", "traded_value", "52W_high",
-       "52 Week Low Price", "tradetime2"], axis=1)
+       "52 Week Low Price"], axis=1)
         update_to_buy_sell(data)
 
+#create table code...
+def create_buy_sell_data_table(mydb):
+    try:
+        cursor = mydb.cursor()
+        cursor.execute("SHOW TABLES LIKE 'buy_sell_data'")
+        result = cursor.fetchone()
+        if result:
+            print("Table Already Exist")
+        else:
+            create_query = """CREATE TABLE buy_sell_data (
+                                id INT AUTO_INCREMENT PRIMARY KEY,
+                                ticker VARCHAR(255),
+                                buy_signal_price VARCHAR(255),
+                                sell_signal_price VARCHAR(255),
+                                strategy_name VARCHAR(255),
+                                indicator VARCHAR(255),
+                                final_trade_date_time TIMESTAMP,
+                                tradestatus VARCHAR(255)
+                            )"""
+            cursor.execute(create_query)
+            print("Table Created Successfully")
+
+        mydb.commit()
+        cursor.close()    
+
+    except Exception as e:
+        print("Error:", e)
 
 def alg_data_cleanup(indicator, formalname, params, mydb):
     # Connect to the MySQL database

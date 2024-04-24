@@ -11,17 +11,44 @@ def db_connection():
     )
     return mydb
 
-def df_data(mydb):
+# def df_data(mydb):
+#     db_cursor=mydb.cursor()
+#     db_cursor.execute("SELECT * FROM trade_record_zenithbir")
+#     trade_records = db_cursor.fetchall()
+#     # # Get column names from cursor description
+#     columns = [i[0] for i in db_cursor.description]
+#     # # Create DataFrame from fetched MySQL data and provide column labels
+#     df = pd.DataFrame(trade_records, columns=columns)
+#     # print(df)
+#     return df
+#-----------------------------------------------------------------------------
+def multiple_table(mydb):
+    db_cursor = mydb.cursor()
+    # all_dfs = []
+    query = "SHOW TABLES LIKE 'trade%'"
+    db_cursor.execute(query)    
+    table_names = [name[0] for name in db_cursor.fetchall()]
+    # all_dfs.append(trade_records)
+    print(table_names)
+    return table_names
+
+def df_data(mydb, table_names):
+    all_dfs = []
     db_cursor=mydb.cursor()
-    db_cursor.execute("SELECT * FROM trade_record_20microns")
-    trade_records = db_cursor.fetchall()
-    # # Get column names from cursor description
-    columns = [i[0] for i in db_cursor.description]
-    # # Create DataFrame from fetched MySQL data and provide column labels
-    df = pd.DataFrame(trade_records, columns=columns)
-    # print(df)
-    return df
+
+    for table_name in table_names:
+        query1 = "SELECT * FROM {}".format(table_name)
+        db_cursor.execute(query1)
     
+        trade_records = db_cursor.fetchall()
+        columns = [i[0] for i in db_cursor.description]
+        combined_df = pd.DataFrame(trade_records, columns=columns)
+        all_dfs.append(combined_df)
+        
+    df = pd.concat(all_dfs, ignore_index=True)
+    print(df)
+    return df
+#--------------------------------------------------------------------------
 
 def param_data(mydb):
     db_cursor=mydb.cursor()
@@ -54,10 +81,11 @@ def thread_manager(df, params, filenames, mydb):
 def main():
     mydb = db_connection()
     print("database Connected!")
-    df = df_data(mydb)
-    db_select = param_data(mydb)
-    params, filenames = param_data_siquence(db_select)
-    thread_manager(df, params, filenames, mydb)
+    table_names = multiple_table(mydb)
+    df = df_data(mydb, table_names)
+    # db_select = param_data(mydb)
+    # params, filenames = param_data_siquence(db_select)
+    # thread_manager(df, params, filenames, mydb)
 
 main()
 

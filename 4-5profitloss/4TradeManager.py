@@ -1,8 +1,78 @@
 import time
 import pandas as pd
 import mysql.connector
-from sqlalchemy import create_engine
 
+def db_connection():
+    mydb=mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Root",
+        database="stockmarket"
+    )
+    return mydb
+
+
+def getALLToTradeDataFromBuySaleTable(mydb, tradestatus):
+    db_cursor=mydb.cursor()
+    db_cursor.execute("select * from buy_sell_data where tradestatus='"+tradestatus+"'")
+    data = db_cursor.fetchall()
+    # # Get column names from cursor description
+    columns = [i[0] for i in db_cursor.description]
+    # # Create DataFrame from fetched MySQL data and provide column labels
+    df = pd.DataFrame(data, columns=columns)
+    # print(df)
+    return df
+
+
+#create table code...
+def create_trade_data_table(mydb):
+    try:
+        cursor = mydb.cursor()
+        cursor.execute("SHOW TABLES LIKE 'trade_data'")
+        result = cursor.fetchone()
+        if result:
+            print("Table Already Exist")
+        else:
+            create_query = """CREATE TABLE trade_data (
+                                id INT AUTO_INCREMENT PRIMARY KEY,
+                                indicator VARCHAR(255),
+                                strategy_name VARCHAR(255),
+                                final_trade_date_time TIMESTAMP,
+                                ticker VARCHAR(255),
+                                qty int,
+                                sell_signal_price VARCHAR(255),
+                                buy_signal_price VARCHAR(255),
+                                tradestatus VARCHAR(255)
+                            )"""
+            cursor.execute(create_query)
+            print("Table Created Successfully")
+
+        mydb.commit()
+        cursor.close()    
+
+    except Exception as e:
+        print("Error:", e)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#--------------------------------------------------------------------------------------
 # mysql connection 
 mydb = mysql.connector.connect(
   host="localhost",
@@ -10,6 +80,8 @@ mydb = mysql.connector.connect(
   password="admin",
   database="shop_portal"
 )
+
+
 def db_connect():
   try:
     print("Connecting to database")
@@ -41,7 +113,7 @@ def prepareTradeDF(toTradeBuySaleDF):
         'buy_signal_price': buySaleRow['buy_signal_price'],
         'tradestatus': 'ORDER_PLACED'
       }
-    tradeDf.loc[index2] = new_row
+    tradeDf.loc[index2] = new_rowa
   return tradeDf
 
 def updateTradeTable(tradeDF):
