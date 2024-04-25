@@ -44,6 +44,6 @@ def ao_buy_sell(df, risk, mydb):
     data['tradestatus'] = "Completed"
     utils.update_data_table(data)
     # print("Indicators123: ", df.columns)
-    return df
+    return data
 
 
