@@ -15,11 +15,10 @@ def update_status_after_trade_success(oldStatus, newStatus, mydb):
             print("Error:", e)
             print("Error in query:", sql_query)
 
-        time.sleep(30)  # Wait for 30 seconds before processing the next row
+        # time.sleep(30)  # Wait for 30 seconds before processing the next row
 
     update_thread = threading.Thread(target=update_thread)
     update_thread.start()
-
     # Wait for the thread to finish execution
     update_thread.join()
 
@@ -32,6 +31,7 @@ def update_trade_status(old_status, new_status, mydb):
         
         for row in rows:
             update_status_after_trade_success(old_status, new_status, mydb)
+            time.sleep(30)  # Wait for 30 seconds before processing the next row
 
     except Exception as e:
         print("Error:", e)

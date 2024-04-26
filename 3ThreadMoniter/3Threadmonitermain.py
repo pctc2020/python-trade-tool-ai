@@ -24,7 +24,7 @@ def db_connection():
 #-----------------------------------------------------------------------------
 def multiple_table(mydb):
     db_cursor = mydb.cursor()
-    query = "SHOW TABLES LIKE 'trade%'"
+    query = "SHOW TABLES LIKE 'trade_record%'"
     db_cursor.execute(query)    
     table_names = [name[0] for name in db_cursor.fetchall()]
     print(table_names)

@@ -29,12 +29,14 @@ def getALLToTradeDataFromBuySaleTable(mydb, tradestatus):
 def insert_data_to_trade_data_table(df, mydb):    
     try:
         cursor = mydb.cursor()
+        # Create a timestamp in milliseconds
+        current_time_millis = int(time.time() * 1000)
         # create_trade_data_table(mydb)
         for index, row in df.iterrows():
             # SQL query to insert data into the table
             query = """INSERT INTO trade_data (id, indicator, strategy_name, final_trade_date_time, ticker, qty, buy_signal_price, sell_signal_price, tradestatus) 
-                    VALUES (NULL, %s, %s, %s, %s, %s, %s, %s, %s)"""  
-            values = (row['indicator'], row['strategy_name'], row['final_trade_date_time'], row['ticker'], 10, row['buy_signal_price'], row['sell_signal_price'], "ORDER_PLACED")
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""  
+            values = (current_time_millis, row['indicator'], row['strategy_name'], row['final_trade_date_time'], row['ticker'], 10, row['buy_signal_price'], row['sell_signal_price'], "ORDER_PLACED")
             # print(query)
             cursor.execute(query, values)
             mydb.commit()
@@ -54,7 +56,7 @@ def create_trade_data_table(mydb):
             print("Table Already Exist")
         else:
             create_query = """CREATE TABLE trade_data (
-                                id INT AUTO_INCREMENT PRIMARY KEY,
+                                id BIGINT,
                                 indicator VARCHAR(255),
                                 strategy_name VARCHAR(255),
                                 final_trade_date_time TIMESTAMP,

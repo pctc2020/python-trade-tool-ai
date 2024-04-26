@@ -5,18 +5,71 @@ import mysql.connector
 from sqlalchemy import create_engine
 from numpy.random import randint
 # mysql connection 
-mydb = mysql.connector.connect(
-  host="localhost",
-  user="root",
-  password="Root",
-  database="stockmarket"
-)
+# mydb = mysql.connector.connect(
+#   host="localhost",
+#   user="root",
+#   password="Root",
+#   database="stockmarket"
+# )
 
-def getTradeSuccessData(ticeker, indicator, tradeStatus):
-    selQry = "select * from trade_data where tradestatus='"+tradeStatus+"' and ticker='"+ticeker+"' and indicator='"+indicator+"'"
-    dataframe =  pd.read_sql(selQry, mydb)
-    return dataframe
+# def getTradeSuccessData(ticeker, indicator, tradeStatus):
+#     selQry = "select * from trade_data where tradestatus='"+tradeStatus+"' and ticker='"+ticeker+"' and indicator='"+indicator+"'"
+#     dataframe =  pd.read_sql(selQry, mydb)
+#     return dataframe
+# -------------------------shivam-----------------------------------------------------
 
+def db_connection():
+    mydb=mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Root",
+        database="stockmarket"
+    )
+    return mydb
+
+
+def getALLToTradeDataFromBuySaleTable(mydb, tradestatus):
+    db_cursor=mydb.cursor()
+    db_cursor.execute("select * from trade_data where tradestatus='"+tradeStatus+"' and ticker='"+ticeker+"' and indicator='"+indicator+"'")
+    data = db_cursor.fetchall()
+    # # Get column names from cursor description
+    columns = [i[0] for i in db_cursor.description]
+    # # Create DataFrame from fetched MySQL data and provide column labels
+    df = pd.DataFrame(data, columns=columns)
+    # print(df)
+    return df
+
+#create table code...
+def create_profit_loss_data_table(mydb):
+    try:
+        cursor = mydb.cursor()
+        cursor.execute("SHOW TABLES LIKE 'profit_loss_data'")
+        result = cursor.fetchone()
+        if result:
+            print("Table Already Exist")
+        else:
+            create_query = """CREATE TABLE profit_loss_data (
+                                id BIGINT,
+                                indicator VARCHAR(255),
+                                strategy_name VARCHAR(255),
+                                final_trade_date_time TIMESTAMP,
+                                script VARCHAR(255),
+                                qty int,
+                                sale_price VARCHAR(255),
+                                purchase_price VARCHAR(255),
+                                brokerage FLOAT,
+                                final_amount FLOAT,
+                                trade_type VARCHAR(255)
+                            )"""
+            cursor.execute(create_query)
+            print("Table Created Successfully")
+
+        mydb.commit()
+        cursor.close()    
+
+    except Exception as e:
+        print("Error:", e)
+# -------------------------------------------------------------------------------
 
 def calculateProfitLossIndicatorWise(tradeDF):
     # step1 group by script, indicator, datetime

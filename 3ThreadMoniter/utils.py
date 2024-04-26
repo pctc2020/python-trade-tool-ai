@@ -3,6 +3,18 @@ import mysql.connector
 import pymysql
 import psycopg2
 
+def handle_nan_values(df):
+    # List of columns to check for NaN values
+    columns_to_check = ["buy_signal_value", "sell_signal_value"]
+
+    # Iterate over each column and replace NaN with 0
+    for column in columns_to_check:
+        # Check if the column contains numeric values
+        if pd.api.types.is_numeric_dtype(df[column]):
+            df[column] = df[column].fillna(0)  # Replace NaN with 0 for numeric columns
+
+    return df
+
 def insert_data(data, conn):    
     try:
         cur = conn.cursor()
@@ -39,6 +51,8 @@ def update_to_buy_sell(data):
         conn = db_connect()
         # print(data.columns)
         print(data)
+        # handle nan value
+        # handle_nan_values(data) 
         #insert data in database table
         insert_data(data, conn)
         # data.to_sql("buy_sell_data", conn, if_exists="replace", index=False)
@@ -67,11 +81,21 @@ def create_buy_sell_data_table(mydb):
         if result:
             print("Table Already Exist")
         else:
+            # create_query = """CREATE TABLE buy_sell_data (
+            #                     id INT AUTO_INCREMENT PRIMARY KEY,
+            #                     ticker VARCHAR(255),
+            #                     buy_signal_price VARCHAR(255),
+            #                     sell_signal_price VARCHAR(255),
+            #                     strategy_name VARCHAR(255),
+            #                     indicator VARCHAR(255),
+            #                     final_trade_date_time TIMESTAMP,
+            #                     tradestatus VARCHAR(255)
+            #                 )"""
             create_query = """CREATE TABLE buy_sell_data (
                                 id INT AUTO_INCREMENT PRIMARY KEY,
                                 ticker VARCHAR(255),
-                                buy_signal_price VARCHAR(255),
-                                sell_signal_price VARCHAR(255),
+                                buy_signal_price FLOAT,
+                                sell_signal_price FLOAT,
                                 strategy_name VARCHAR(255),
                                 indicator VARCHAR(255),
                                 final_trade_date_time TIMESTAMP,
