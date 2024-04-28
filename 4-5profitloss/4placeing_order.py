@@ -1,9 +1,7 @@
 import time
 import pandas as pd
-import _5_thread_manager
+import T5threadmanager
 import mysql.connector
-
-
 
 def db_connection():
     mydb=mysql.connector.connect(
@@ -62,8 +60,8 @@ def create_trade_data_table(mydb):
                                 final_trade_date_time TIMESTAMP,
                                 ticker VARCHAR(255),
                                 qty int,
-                                buy_signal_price VARCHAR(255),
-                                sell_signal_price VARCHAR(255),
+                                buy_signal_price FLOAT,
+                                sell_signal_price FLOAT,
                                 tradestatus VARCHAR(255)
                             )"""
             cursor.execute(create_query)
@@ -83,7 +81,7 @@ def main():
         create_trade_data_table(mydb)
         insert_data_to_trade_data_table(df, mydb)
         print(" insert trade record into trade table : {} ".format(len(df)))
-        _5_thread_manager.update_trade_status("ORDER_PLACED", "TRADE_SUCCESS", mydb)
+        T5threadmanager.update_trade_status("ORDER_PLACED", "TRADE_SUCCESS", mydb)
         print(" updat status with trade success : {} ".format(len(df)))
     except Exception as e:
         print("Error:", e)

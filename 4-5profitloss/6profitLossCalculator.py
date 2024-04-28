@@ -15,9 +15,9 @@ def db_connection():
     return mydb
 
 
-def getALLToTradeDataFromBuySaleTable(ticker, indicator, tradestatus,mydb):
+def get_all_to_trade_data_from_buy_sale_table(mydb):
     db_cursor=mydb.cursor()
-    db_cursor.execute("select * from trade_data where tradestatus='"+tradeStatus+"' and ticker='"+ticker+"' and indicator='"+indicator+"'")
+    db_cursor.execute("SELECT * FROM trade_data WHERE tradestatus='TRADE_SUCCESS'")
     data = db_cursor.fetchall()
     # # Get column names from cursor description
     columns = [i[0] for i in db_cursor.description]
@@ -36,7 +36,7 @@ def create_profit_loss_data_table(mydb):
             print("profit_loss_data Table Already Exist")
         else:
             create_query = """CREATE TABLE profit_loss_data (
-                                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                id INT AUTO_INCREMENT PRIMARY KEY,
                                 indicator VARCHAR(255),
                                 strategy_name VARCHAR(255),
                                 final_trade_date_time TIMESTAMP,
@@ -62,15 +62,15 @@ def insert_data_to_profit_loss_data_table(df, mydb):
         cursor = mydb.cursor()
         create_profit_loss_data_table(mydb)
         for index, row in df.iterrows():
-            script = row['ticker'],
-            sale_rate = float(row['sell_signal_price'])*0.9895,# Subtracting 1.05% from sell_signal_price
-            purchase_rate = float(row['buy_signal_price'])*1.0105,  # Adding 1.05% to buy_signal_price
-            brokerage = float(row['sell_signal_price'])*0.19,
-            final_amount = float(row['sell_signal_price'])-float(row['buy_signal_price'])-float(row['sell_signal_price'])*0.19,
+            script = row['ticker']
+            sale_rate = float(row['sell_signal_price'])*0.9895# Subtracting 1.05% from sell_signal_price
+            purchase_rate = float(row['buy_signal_price'])*1.0105  # Adding 1.05% to buy_signal_price
+            brokerage = float(row['sell_signal_price'])*0.21
+            final_amount = sale_rate - purchase_rate
             trade_type = 'EQ'
             # SQL query to insert data into the table
             query = """INSERT INTO profit_loss_data 
-                       (indicator, strategy_name, final_trade_date_time, script, qty, sale_rate, purchase_rate, brockerage, final_amount, trade_type) 
+                       (indicator, strategy_name, final_trade_date_time, script, qty, sale_rate, purchase_rate, brokerage, final_amount, trade_type) 
                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""  
             values = (row['indicator'], row['strategy_name'], row['final_trade_date_time'], script, row['qty'], sale_rate, purchase_rate, brokerage, final_amount, trade_type)
             cursor.execute(query, values)
@@ -83,7 +83,7 @@ def insert_data_to_profit_loss_data_table(df, mydb):
 # data fetch profit_loss_table
 def get_all_profit_loss_table_data(mydb):
     db_cursor=mydb.cursor()
-    db_cursor.execute("select * from profit_loss_data")
+    db_cursor.execute("SELECT * FROM profit_loss_data")
     data = db_cursor.fetchall()
     # # Get column names from cursor description
     columns = [i[0] for i in db_cursor.description]
@@ -102,7 +102,7 @@ def create_investment_table_data_(mydb):
             print("Table Already Exist")
         else:
             create_query = """CREATE TABLE investment_table_data (
-                                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                id INT AUTO_INCREMENT PRIMARY KEY,
                                 indicator VARCHAR(255),
                                 strategy_name VARCHAR(255),
                                 final_trade_date_time TIMESTAMP,
@@ -128,15 +128,19 @@ def insert_data_to_investment_table_data_(df, mydb):
         cursor = mydb.cursor()
         create_investment_table_data_(mydb) 
         for index, row in df.iterrows():
-            qty = 10000/df['purchase_rate']
-            # SQL query to insert data into the table
-            query = """INSERT INTO investment_table_data 
-                       (indicator, strategy_name, final_trade_date_time, script, qty, sale_rate, purchase_rate, brockerage, final_amount, trade_type) 
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""  
-            values = (row['indicator'], row['strategy_name'], row['final_trade_date_time'], row['script'], qty, row['sale_rate'], row['purchase_rate'], row['brokerage'], row['final_amount'], row['trade_type'])
-            cursor.execute(query, values)
-            mydb.commit()
-            print("Data inserted successfully!")
+          if row['purchase_rate'] != 0:
+              qty = 10000/row['purchase_rate']
+              # SQL query to insert data into the table
+              query = """INSERT INTO investment_table_data 
+                        (indicator, strategy_name, final_trade_date_time, script, qty, sale_rate, purchase_rate, brokerage, final_amount, trade_type) 
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""  
+              values = (row['indicator'], row['strategy_name'], row['final_trade_date_time'], row['script'], qty, row['sale_rate'], row['purchase_rate'], row['brokerage'], row['final_amount'], row['trade_type'])
+              cursor.execute(query, values)
+              mydb.commit()
+              print("Data inserted successfully!")
+          else:
+              print("Error: Cannot divide by zero for purchase_rate =", row['purchase_rate'])
+        cursor.close()
         cursor.close()
     except Exception as e:
         print("Error:", e)
@@ -151,20 +155,31 @@ def update_Trade_table_After_Calculation(tradeDF, newStatus, mydb):
     except Exception as e:
       print("Error:", e)
 
-def main():
-  mydb = db_connection()
-  tradeDF = getALLToTradeDataFromBuySaleTable("","","",mydb)
-  print("got all TRADE_SUCCESS record into tradeDF : {} ".format(len(tradeDF)))
-  Profit_loss = insert_data_to_profit_loss_data_table(tradeDF, mydb)
-  print("updated profit_loss_data_table : {} ".format(len(Profit_loss)))
-  Profit_table = get_all_profit_loss_table_data(mydb)
-  print("got all Profit_loss record : {} ".format(len(tradeDF)))
-  invest_table = insert_data_to_investment_table_data_(Profit_table, mydb)
-  print("updated investment_table_data: {} ".format(len(Profit_table)))
-  update_Trade_table_After_Calculation(tradeDF, "PL & investment Calculated")
-  print("update trade status in trade table : {} ".format(len(tradeDF)))
 
-main()
+
+def main():
+    try:
+        mydb = db_connection()
+        tradeDF = get_all_to_trade_data_from_buy_sale_table(mydb)
+        print("got all TRADE_SUCCESS record into tradeDF : {} ".format(len(tradeDF)))
+        insert_data_to_profit_loss_data_table(tradeDF, mydb)
+        print("updated profit_loss_data_table : {} ".format(len(tradeDF)))
+        Profit_Loss_table = get_all_profit_loss_table_data(mydb)
+        print("got all Profit_loss record : {} ".format(len(Profit_Loss_table)))
+        insert_data_to_investment_table_data_(Profit_Loss_table, mydb)
+        print("updated investment_table_data: {} ".format(len(Profit_Loss_table)))
+        # update_Trade_table_After_Calculation(tradeDF, "PL_Investment_Calculated", mydb)
+        # print("update trade status in trade table : {} ".format(len(tradeDF)))
+    except Exception as e:
+      print("Error:",e)
+    finally:
+      if mydb:
+          mydb.close()
+
+if __name__=="__main__":
+    main()
+
+
 # -------------------------------------------------------------------------------
 # # mysql connection 
 # mydb = mysql.connector.connect(
