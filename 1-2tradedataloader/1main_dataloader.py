@@ -46,7 +46,8 @@ def open_connection():
 toReset=True
 
 all_scripts = [
-    "20MICRONS", "21STCENMGM", "3IINFOTECH", "3MINDIA", "3PLAND", "3RDROCK", "5PAISA", "63MOONS", "A2ZINFRA", 
+    "ACC", "SBIN", "APLC", "APOLLO", 
+    # "20MICRONS", "21STCENMGM", "3IINFOTECH", "3MINDIA", "3PLAND", "3RDROCK", "5PAISA", "63MOONS", "A2ZINFRA", 
     # "AAKASH", "AARON", "AARTIDRUGS", "AARTIIND", "AARVEEDEN", "AARVI", "AAVAS", "ABAN", "ABB", "ABCAPITAL", 
     # "ABFRL", "ABINFRA", "ABMINTLTD", "ABNINT", "ACC", "ACCELYA", "ACCORD", "ACCURACY", "ACE", "ACEINTEG", 
     # "ADANIENT", "ADANIGAS", "ADANIGREEN", "ADANIPORTS", "ADANIPOWER", "ADANITRANS", "ADFFOODS", "ADHUNIKIND", 
@@ -142,8 +143,8 @@ all_scripts = [
     # "VSTIND", "VSTTILLERS", "VTL", "WABAG", "WABCOINDIA", "WALCHANNAG", "WANBURY", "WEALTH", "WEBELSOLAR", 
     # "WEIZMANIND", "WELCORP", "WELENT", "WELINV", "WELSPUNIND", "WENDT", "WFL", "WHEELS", "WHIRLPOOL", "WILLAMAGOR",
     # "WINDMACHIN", "WIPL", "WIPRO", "WOCKPHARMA", "WONDERLA", "WORTH", "WSI", "WSTCSTPAPR", "XCHANGING", 
-    "XELPMOC", "XPROINDIA", "YESBANK", "ZAGGLE", "ZEEL", "ZEELEARN", "ZEEMEDIA", "ZENITHBIR", "ZENITHEXPO", 
-    "ZENSARTECH", "ZENTEC", "ZICOM", "ZODIAC", "ZODIACLOTH", "ZODJRDMKJ", "ZOTA", "ZUARI", "ZUARIGLOB", "ZYDUSWELL"
+    # "XELPMOC", "XPROINDIA", "YESBANK", "ZAGGLE", "ZEEL", "ZEELEARN", "ZEEMEDIA", "ZENITHBIR", "ZENITHEXPO", 
+    # "ZENSARTECH", "ZENTEC", "ZICOM", "ZODIAC", "ZODIACLOTH", "ZODJRDMKJ", "ZOTA", "ZUARI", "ZUARIGLOB", "ZYDUSWELL"
   ]
 
 
@@ -164,7 +165,7 @@ def getEnddate(month, year):
 
 reset = False
 startYear = 2020
-endYear = 2023
+endYear = 2024
 startMonth = 1
 endMonth = 13
 def build_Scriptrangetodownload(scripts):
@@ -189,25 +190,42 @@ def build_Scriptrangetodownload(scripts):
     mydb.commit()
     mydb.close()
 
+# ------------------------------------------------------
+def update_workstatus(dataframe, row_id):
+    mydb = open_connection()
+    cursor = mydb.cursor()
+    # Check if DataFrame is empty or None
+    if dataframe is None or len(dataframe) == 0:
+        print("Data not Available")
+        return
+
+    else:
+        # Update 'workstatus' column
+        update_query = f"UPDATE script_range_to_download SET workstatus = 'COMPLETED' WHERE id = {row_id}"
+        cursor.execute(update_query)
+        print("Workstatus updated to 'COMPLETED'")        
+    
+    mydb.commit()
+# -----------------------------------------------------
 def get_ScriptDataToFatch(scriptName):
     mydb = open_connection()    
     mycursor = mydb.cursor()
-    mycursor.execute("SELECT scriptname, start_date, end_date from script_range_to_download where workstatus='TODOWNLOAD' and scriptName='"+scriptName+"' order by scriptname DESC, year DESC, month DESC limit 1;")
+    mycursor.execute("SELECT scriptname, start_date, end_date, id from script_range_to_download where workstatus='TODOWNLOAD' and scriptName='"+scriptName+"' order by scriptname DESC, year DESC, month DESC limit 1;")
     firstRow = mycursor.fetchone()
     mydb.close()
     return firstRow
 
-def build_scriptTradeData(dataframe, scriptName):
+def build_scriptTradeData(dataframe, scriptName, row_id):
     # update_work_status(scriptName, "INPROGRESS") 
     dataframe.index.name = 'idno'
     dataframe.index = np.arange(1, len(dataframe) + 1)
     dataframe.index.name = 'idno'
     table_name = 'trade_record_'+(scriptName.lower().replace(" ","_"))
     # print(dataframe)
-    create_table_insert_data(dataframe,table_name)
+    create_table_insert_data(dataframe,table_name, row_id)
 
 
-def create_table_insert_data(dataframe,table_name,):
+def create_table_insert_data(dataframe,table_name, row_id):
     mydb = open_connection()
     cursor = mydb.cursor()
     query = f"SHOW TABLES LIKE '{table_name}'"
@@ -236,18 +254,21 @@ def create_table_insert_data(dataframe,table_name,):
         cursor.execute(create_table_query)
         print("Table created!")
         cursor.commit()
-        mydb.commit() 
+        mydb.commit()
+    print("Table Already exists!") 
     # Insert data into the table
     for index, row in dataframe.iterrows():
         # Convert 'tradetime2' column to the appropriate datetime format
         tradetime2 = datetime.datetime.strptime(row['tradetime2'], '%d-%b-%Y').strftime('%Y-%m-%d %H:%M:%S')
         insert_query = f"INSERT INTO {table_name} (`script`, `stock`, `high`, `low`, `open`, `close`, `last_price`, `prev_close`, `quantity`, `traded_value`, `52W_high`, `52 Week Low Price`, `tradetime2`) VALUES ('{row['script']}','{row['stock']}','{row['high']}','{row['low']}','{row['open']}','{row['close']}','{row['last_price']}','{row['prev_close']}','{row['quantity']}','{row['traded_value']}','{row['52W_high']}','{row['52 Week Low Price']}','{tradetime2}')"
         print(insert_query)
-        print("Table Already exists!")
         cursor.execute(insert_query)
 
     # Commit changes to the database
-    mydb.commit()  
+    # if lagana h agar dataframe not null and Data frame size grater then Zero 
+    # If : 
+    mydb.commit()
+    update_workstatus(dataframe, row_id)  
     print(f"New table '{table_name}' created and data inserted.")
 
 
@@ -266,6 +287,7 @@ def process_to_download_and_persist(scriptName, semaphore):
     try:
         dataToFetch = get_ScriptDataToFatch(scriptName)
         print(dataToFetch)
+        row_id = dataToFetch[3]
         startDate = str(dataToFetch[1])
         endDate = str(dataToFetch[2])
         # startDate = "01-"+str(dataToFetch[2])+"-"+str(dataToFetch[1])    
@@ -277,7 +299,7 @@ def process_to_download_and_persist(scriptName, semaphore):
         dataframeRate = stocks.get_data(stock_symbol=scriptName, full_data=False, start_date=startDate, end_date=endDate)
         # print(dataframeRate.columns)
         # print("tradetime2",dataframeRate['tradetime2'].dtype)
-        build_scriptTradeData(dataframeRate, scriptName)
+        build_scriptTradeData(dataframeRate, scriptName, row_id)
     finally:
         semaphore.release()
 
@@ -285,7 +307,7 @@ def process_to_download_and_persist(scriptName, semaphore):
 def main():
     mydb = open_connection()
     scriptNames = get_all_pending_script_names(mydb)
-    print(len(scriptNames))
+#     print(len(scriptNames))
     if (scriptNames== None) | (len(scriptNames)==0) :
         build_Scriptrangetodownload(all_scripts)
     max_allow_thread = 4  # Number of threads
@@ -302,5 +324,4 @@ def main():
 
     print("Threads Completed!")    
         
-
 main()
